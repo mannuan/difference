@@ -1,4 +1,7 @@
-import argparse, os, sys, glob
+import argparse
+import os
+import sys
+import glob
 import cv2
 import torch
 import numpy as np
@@ -25,7 +28,8 @@ from transformers import AutoFeatureExtractor
 
 # load safety model
 safety_model_id = "CompVis/stable-diffusion-safety-checker"
-safety_feature_extractor = AutoFeatureExtractor.from_pretrained(safety_model_id)
+safety_feature_extractor = AutoFeatureExtractor.from_pretrained(
+    safety_model_id)
 safety_checker = StableDiffusionSafetyChecker.from_pretrained(safety_model_id)
 
 
@@ -77,7 +81,8 @@ def put_watermark(img, wm_encoder=None):
 def load_replacement(x):
     try:
         hwc = x.shape
-        y = Image.open("assets/rick.jpeg").convert("RGB").resize((hwc[1], hwc[0]))
+        y = Image.open(
+            "assets/rick.jpeg").convert("RGB").resize((hwc[1], hwc[0]))
         y = (np.array(y)/255.0).astype(x.dtype)
         assert y.shape == x.shape
         return y
@@ -86,8 +91,10 @@ def load_replacement(x):
 
 
 def check_safety(x_image):
-    safety_checker_input = safety_feature_extractor(numpy_to_pil(x_image), return_tensors="pt")
-    x_checked_image, has_nsfw_concept = safety_checker(images=x_image, clip_input=safety_checker_input.pixel_values)
+    safety_checker_input = safety_feature_extractor(
+        numpy_to_pil(x_image), return_tensors="pt")
+    x_checked_image, has_nsfw_concept = safety_checker(
+        images=x_image, clip_input=safety_checker_input.pixel_values)
     assert x_checked_image.shape[0] == len(has_nsfw_concept)
     for i in range(len(has_nsfw_concept)):
         if has_nsfw_concept[i]:
@@ -98,141 +105,45 @@ def check_safety(x_image):
 def main():
     parser = argparse.ArgumentParser()
 
-    parser.add_argument(
-        "--prompt",
-        type=str,
-        nargs="?",
-        default="a painting of a virus monster playing guitar",
-        help="the prompt to render"
-    )
-    parser.add_argument(
-        "--outdir",
-        type=str,
-        nargs="?",
-        help="dir to write results to",
-        default="outputs/txt2img-samples"
-    )
-    parser.add_argument(
-        "--skip_grid",
-        action='store_true',
-        help="do not save a grid, only individual samples. Helpful when evaluating lots of samples",
-    )
-    parser.add_argument(
-        "--skip_save",
-        action='store_true',
-        help="do not save individual samples. For speed measurements.",
-    )
-    parser.add_argument(
-        "--ddim_steps",
-        type=int,
-        default=50,
-        help="number of ddim sampling steps",
-    )
-    parser.add_argument(
-        "--plms",
-        action='store_true',
-        help="use plms sampling",
-    )
-    parser.add_argument(
-        "--dpm_solver",
-        action='store_true',
-        help="use dpm_solver sampling",
-    )
-    parser.add_argument(
-        "--laion400m",
-        action='store_true',
-        help="uses the LAION400M model",
-    )
-    parser.add_argument(
-        "--fixed_code",
-        action='store_true',
-        help="if enabled, uses the same starting code across samples ",
-    )
-    parser.add_argument(
-        "--ddim_eta",
-        type=float,
-        default=0.0,
-        help="ddim eta (eta=0.0 corresponds to deterministic sampling",
-    )
-    parser.add_argument(
-        "--n_iter",
-        type=int,
-        default=2,
-        help="sample this often",
-    )
-    parser.add_argument(
-        "--H",
-        type=int,
-        default=512,
-        help="image height, in pixel space",
-    )
-    parser.add_argument(
-        "--W",
-        type=int,
-        default=512,
-        help="image width, in pixel space",
-    )
-    parser.add_argument(
-        "--C",
-        type=int,
-        default=4,
-        help="latent channels",
-    )
-    parser.add_argument(
-        "--f",
-        type=int,
-        default=8,
-        help="downsampling factor",
-    )
-    parser.add_argument(
-        "--n_samples",
-        type=int,
-        default=3,
-        help="how many samples to produce for each given prompt. A.k.a. batch size",
-    )
-    parser.add_argument(
-        "--n_rows",
-        type=int,
-        default=0,
-        help="rows in the grid (default: n_samples)",
-    )
-    parser.add_argument(
-        "--scale",
-        type=float,
-        default=7.5,
-        help="unconditional guidance scale: eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty))",
-    )
-    parser.add_argument(
-        "--from-file",
-        type=str,
-        help="if specified, load prompts from this file",
-    )
-    parser.add_argument(
-        "--config",
-        type=str,
-        default="configs/stable-diffusion/v1-inference.yaml",
-        help="path to config which constructs model",
-    )
-    parser.add_argument(
-        "--ckpt",
-        type=str,
-        default="models/ldm/stable-diffusion-v1/model.ckpt",
-        help="path to checkpoint of model",
-    )
-    parser.add_argument(
-        "--seed",
-        type=int,
-        default=42,
-        help="the seed (for reproducible sampling)",
-    )
-    parser.add_argument(
-        "--precision",
-        type=str,
-        help="evaluate at this precision",
-        choices=["full", "autocast"],
-        default="autocast"
-    )
-    opt = parser.parse_args()
+    parser.add_argument("--prompt", type=str, nargs="?",
+                        default="a painting of a virus monster playing guitar", help="提示文字")
+    parser.add_argument("--outdir", type=str, nargs="?",
+                        default="outputs/txt2img-samples", help="结果目录")
+    parser.add_argument("--skip_grid", action='store_true',
+                        help="不保存网格，仅保存单个样本。 在评估大量样品时很有用")
+    parser.add_argument("--skip_save", action='store_true',
+                        help="不要保存单个样本，用于速度测量")
+    parser.add_argument("--ddim_steps", type=int, default=50, help="ddim采样步骤数")
+    parser.add_argument("--plms", action='store_true', help="使用plms采样")
+    parser.add_argument("--dpm_solver", action='store_true',
+                        help="使用dpm_solver采样")
+    parser.add_argument("--laion400m", action='store_true',
+                        help="使用LAION400M模型")
+    parser.add_argument("--fixed_code", action='store_true',
+                        help="如果启用，跨样本使用相同的起始代码")
+    parser.add_argument("--ddim_eta", type=float, default=0.0,
+                        help="ddim and (eta=0.0 对应确定性采样")
+    parser.add_argument("--n_iter", type=int, default=2, help="经常采样")
+    parser.add_argument("--H", type=int, default=512, help="图像高度，在像素空间")
+    parser.add_argument("--W", type=int, default=512, help="图像宽度，在像素空间")
+    parser.add_argument("--C", type=int, default=4, help="潜在通道")
+    parser.add_argument("--f", type=int, default=8, help="下采样因子")
+    parser.add_argument("--n_samples", type=int, default=3,
+                        help="每个给定提示要生成多少样本。 又名 批量大小")
+    parser.add_argument("--n_rows", type=int, default=0,
+                        help="网格中的行（默认值：n_samples）")
+    parser.add_argument("--scale", type=float, default=7.5,
+                        help="无条件指导量表：eps = eps(x, empty) + scale * (eps(x, cond) - eps(x, empty))")
+    parser.add_argument("--from-file", type=str, help="如果指定，从该文件加载提示")
+    parser.add_argument("--config", type=str,
+                        default="configs/stable-diffusion/v1-inference.yaml",
+                        help="构造模型的配置路径")
+    parser.add_argument("--ckpt", type=str, default="models/ldm/stable-diffusion-v1/model.ckpt",
+                        help="模型的检查点路径")
+    parser.add_argument("--seed", type=int, default=42, help="种子（用于重复采样）")
+    parser.add_argument("--precision", type=str,
+                        choices=["full", "autocast"], default="autocast", help="以此精度进行评估")
+    opt = parser.parse_args(args=[])
 
     if opt.laion400m:
         print("Falling back to LAION 400M model...")
@@ -245,7 +156,8 @@ def main():
     config = OmegaConf.load(f"{opt.config}")
     model = load_model_from_config(config, f"{opt.ckpt}")
 
-    device = torch.device("cuda") if torch.cuda.is_available() else torch.device("cpu")
+    device = torch.device(
+        "cuda") if torch.cuda.is_available() else torch.device("cpu")
     model = model.to(device)
 
     if opt.dpm_solver:
@@ -283,9 +195,10 @@ def main():
 
     start_code = None
     if opt.fixed_code:
-        start_code = torch.randn([opt.n_samples, opt.C, opt.H // opt.f, opt.W // opt.f], device=device)
+        start_code = torch.randn(
+            [opt.n_samples, opt.C, opt.H // opt.f, opt.W // opt.f], device=device)
 
-    precision_scope = autocast if opt.precision=="autocast" else nullcontext
+    precision_scope = autocast if opt.precision == "autocast" else nullcontext
     with torch.no_grad():
         with precision_scope("cuda"):
             with model.ema_scope():
@@ -295,7 +208,8 @@ def main():
                     for prompts in tqdm(data, desc="data"):
                         uc = None
                         if opt.scale != 1.0:
-                            uc = model.get_learned_conditioning(batch_size * [""])
+                            uc = model.get_learned_conditioning(
+                                batch_size * [""])
                         if isinstance(prompts, tuple):
                             prompts = list(prompts)
                         c = model.get_learned_conditioning(prompts)
@@ -311,19 +225,26 @@ def main():
                                                          x_T=start_code)
 
                         x_samples_ddim = model.decode_first_stage(samples_ddim)
-                        x_samples_ddim = torch.clamp((x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
+                        x_samples_ddim = torch.clamp(
+                            (x_samples_ddim + 1.0) / 2.0, min=0.0, max=1.0)
                         x_samples_ddim = x_samples_ddim.cpu().permute(0, 2, 3, 1).numpy()
 
-                        x_checked_image, has_nsfw_concept = check_safety(x_samples_ddim)
+                        x_checked_image, has_nsfw_concept = check_safety(
+                            x_samples_ddim)
 
-                        x_checked_image_torch = torch.from_numpy(x_checked_image).permute(0, 3, 1, 2)
+                        x_checked_image_torch = torch.from_numpy(
+                            x_checked_image).permute(0, 3, 1, 2)
 
                         if not opt.skip_save:
                             for x_sample in x_checked_image_torch:
-                                x_sample = 255. * rearrange(x_sample.cpu().numpy(), 'c h w -> h w c')
-                                img = Image.fromarray(x_sample.astype(np.uint8))
+                                x_sample = 255. * \
+                                    rearrange(x_sample.cpu().numpy(),
+                                              'c h w -> h w c')
+                                img = Image.fromarray(
+                                    x_sample.astype(np.uint8))
                                 img = put_watermark(img, wm_encoder)
-                                img.save(os.path.join(sample_path, f"{base_count:05}.png"))
+                                img.save(os.path.join(
+                                    sample_path, f"{base_count:05}.png"))
                                 base_count += 1
 
                         if not opt.skip_grid:
@@ -336,10 +257,12 @@ def main():
                     grid = make_grid(grid, nrow=n_rows)
 
                     # to image
-                    grid = 255. * rearrange(grid, 'c h w -> h w c').cpu().numpy()
+                    grid = 255. * \
+                        rearrange(grid, 'c h w -> h w c').cpu().numpy()
                     img = Image.fromarray(grid.astype(np.uint8))
                     img = put_watermark(img, wm_encoder)
-                    img.save(os.path.join(outpath, f'grid-{grid_count:04}.png'))
+                    img.save(os.path.join(
+                        outpath, f'grid-{grid_count:04}.png'))
                     grid_count += 1
 
                 toc = time.time()
