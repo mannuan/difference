@@ -108,7 +108,7 @@ def main():
     parser.add_argument("--prompt", type=str, nargs="?",
                         default="a painting of a virus monster playing guitar", help="提示文字")
     parser.add_argument("--outdir", type=str, nargs="?",
-                        default="outputs/txt2img-samples", help="结果目录")
+                        default="/content/drive/MyDrive/difference/outputs/txt2img-samples/", help="结果目录")
     parser.add_argument("--skip_grid", action='store_true',
                         help="不保存网格，仅保存单个样本。 在评估大量样品时很有用")
     parser.add_argument("--skip_save", action='store_true',
@@ -138,7 +138,7 @@ def main():
     parser.add_argument("--config", type=str,
                         default="configs/stable-diffusion/v1-inference.yaml",
                         help="构造模型的配置路径")
-    parser.add_argument("--ckpt", type=str, default="models/ldm/stable-diffusion-v1/model.ckpt",
+    parser.add_argument("--ckpt", type=str, default="/content/stable-diffusion-v-1-1-original/sd-v1-1.ckpt",
                         help="模型的检查点路径")
     parser.add_argument("--seed", type=int, default=42, help="种子（用于重复采样）")
     parser.add_argument("--precision", type=str,
